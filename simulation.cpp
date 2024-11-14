@@ -69,12 +69,12 @@ double non_adaptive_hash_rate_function(double t) {
     // cos hash function
     // return (10000000 - 5000000 * sin(2*M_PI*(t-GENESIS_TIME)/(4 * YEAR)));
 
-    // delta hash function
+    // rectangular hash function
     // if (t < 2010.5*YEAR) return 10000000;
     // else if(t < 2016.5*YEAR) return 10000000*30;
     // else return 10000000;
 
-    // stair hash function
+    // staircase hash function
     // if (t < 2010.5*YEAR) return 10000000;
     // else if(t < 2013.5*YEAR) return 10000000*10;
     // else return 10000000 * 100;
@@ -93,9 +93,6 @@ double non_adaptive_hash_rate_function(double t) {
     
     // sin and linearly increasing hash function
     return INITIAL_HASH_RATE + INITIAL_HASH_RATE/YEAR * (t-GENESIS_TIME) + INITIAL_HASH_RATE * sin(2*M_PI*(t-GENESIS_TIME)/(YEAR));
-
-    // TESTER
-    // return INITIAL_HASH_RATE * exp(0.005 * (t-GENESIS_TIME)/YEAR);
 }
 #endif
 
@@ -189,7 +186,7 @@ int main() {
         } while (!(drand48() < candidate.target*non_adaptive_hash_rate_function(t)*NETWORK_RESOLUTION ));      // if the candidate block is valid, break (the mul with non_adaptive_hash_rate_function(t) simulates the effect of volatile network hash rate)
         #endif
         #ifdef ADAPTIVE
-        } while (!(drand48() < candidate.target*adaptive_hash_rate_function(running_avg)*NETWORK_RESOLUTION ));      // if the candidate block is valid, break (the mul with non_adaptive_hash_rate_function(t) simulates the effect of volatile network hash rate)
+        } while (!(drand48() < candidate.target*adaptive_hash_rate_function(running_avg)*NETWORK_RESOLUTION ));      // if the candidate block is valid, break (the mul with adaptive_hash_rate_function(t) simulates the effect of volatile network hash rate)
         #endif
 
         n++;
