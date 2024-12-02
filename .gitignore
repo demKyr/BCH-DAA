@@ -35,3 +35,6 @@ simulation
 # Data
 data/
 .DS_Store
+/.vscode
+simulationFor2ndPaper
+simulationFor2ndPaper.cpp

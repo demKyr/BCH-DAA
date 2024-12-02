@@ -22,10 +22,6 @@
 #define FORTNIGHT (14.0*DAY)
 #define YEAR (365.25*DAY)
 #define INITIAL_ABS_DIFFICULTY (4294967296.0) // 2^32
-// #define INITIAL_ABS_DIFFICULTY (pow(2,69)) // ~ 2^69
-#define INITIAL_HASH_RATE (10000000.0)
-// #define INITIAL_HASH_RATE (pow(10,18))
-
 
 // standard NEFDA algorithm
 #ifdef NEFDA
@@ -41,6 +37,8 @@
 #define IDEAL_INTERBLOCK_TIME (600.0)
 #define GENESIS_TIME (2009.0*YEAR)
 #define FINISH_TIME (2024.0*YEAR)
+
+#define INITIAL_HASH_RATE (10000000.0)
 #define NUM_OF_LAST_BLOCKS 6
 
 using namespace std;
