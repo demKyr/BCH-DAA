@@ -38,3 +38,4 @@ data/
 /.vscode
 simulationFor2ndPaper
 simulationFor2ndPaper.cpp
+out.csv

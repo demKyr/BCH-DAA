@@ -56,7 +56,7 @@ double non_adaptive_hash_rate_function(double t) {
     // return INITIAL_HASH_RATE;
 
     // step hash function
-    // return (t < 2010.5*YEAR) ? pow(10,18) : pow(10,18)*30;
+    return (t < 2010.5*YEAR) ? 10000000 : 10000000*30;
 
     // step hash function
     // return (t < 2010.5*YEAR) ? 10000000 : 10000000*30;
@@ -90,7 +90,7 @@ double non_adaptive_hash_rate_function(double t) {
     // return INITIAL_HASH_RATE * exp(log(2) * pow(((t-GENESIS_TIME)/YEAR),2));
     
     // sin and linearly increasing hash function
-    return INITIAL_HASH_RATE + INITIAL_HASH_RATE/YEAR * (t-GENESIS_TIME) + INITIAL_HASH_RATE * sin(2*M_PI*(t-GENESIS_TIME)/(YEAR));
+    // return INITIAL_HASH_RATE + INITIAL_HASH_RATE/YEAR * (t-GENESIS_TIME) + INITIAL_HASH_RATE * sin(2*M_PI*(t-GENESIS_TIME)/(YEAR));
 }
 #endif
 
