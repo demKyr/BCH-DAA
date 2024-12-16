@@ -12,8 +12,8 @@
 #define MODIFIED_NEFDA
 
 // SELECT ONE OF THE FOLLOWING HASH RATE FUNCTIONS (NON_ADAPTIVE OR ADAPTIVE) TO RUN THE SIMULATION
-#define NON_ADAPTIVE
-// #define ADAPTIVE
+// #define NON_ADAPTIVE
+#define ADAPTIVE
 // ----------------- SIMULATION PARAMETERS -----------------
 
 #define NETWORK_RESOLUTION 1.0
@@ -56,7 +56,7 @@ double non_adaptive_hash_rate_function(double t) {
     // return INITIAL_HASH_RATE;
 
     // step hash function
-    return (t < 2010.5*YEAR) ? 10000000 : 10000000*30;
+    // return (t < 2010.5*YEAR) ? 10000000 : 10000000*30;
 
     // step hash function
     // return (t < 2010.5*YEAR) ? 10000000 : 10000000*30;
@@ -73,9 +73,9 @@ double non_adaptive_hash_rate_function(double t) {
     // else return 10000000;
 
     // staircase hash function
-    // if (t < 2010.5*YEAR) return 10000000;
-    // else if(t < 2013.5*YEAR) return 10000000*10;
-    // else return 10000000 * 100;
+    if (t < 2010.5*YEAR) return 10000000;
+    else if(t < 2013.5*YEAR) return 10000000*10;
+    else return 10000000 * 100;
 
     // linearly increasing hash function
     // return INITIAL_HASH_RATE + (INITIAL_HASH_RATE/YEAR) * (t-GENESIS_TIME);
@@ -96,21 +96,30 @@ double non_adaptive_hash_rate_function(double t) {
 
 
 #ifdef ADAPTIVE
-double adaptive_hash_rate_function(double avg_difficulty){
-    double hb = INITIAL_HASH_RATE / 3;
+double adaptive_hash_rate_function(double cur_avg_difficulty, double prev_avg_difficulty, double t) {
+    // constant hash function
+    // double BASE_HASH_RATE = INITIAL_HASH_RATE;
+    // step hash function
+    // double BASE_HASH_RATE = (t < 2010.5*YEAR) ? 10000000 : 10000000*30;
+    // staircase hash function
+    double BASE_HASH_RATE = (t < 2010.5*YEAR) ? 10000000 : (t < 2013.5*YEAR) ? 10000000*10 : 10000000 * 100;
+    
+    double hb = BASE_HASH_RATE / 3;
     double hv = 4 * hb;
     double hg = 4 * hb;
     double h = hb;
-    double epsilon = 0.03;
+    double epsilon = 0.05;
+    // double epsilon = 0.03;
+    double difficulty_change = cur_avg_difficulty / prev_avg_difficulty;
 
-    if(avg_difficulty <= 1 - epsilon){
+    if(difficulty_change <= 1 - epsilon){
         h += hg + hv;
     }
-    else if(avg_difficulty <= 1 - epsilon/3){
-        h += hg + hv / (1 + exp((-1)*(1-avg_difficulty)/(epsilon*epsilon)));
+    else if(difficulty_change <= 1 - epsilon/3){
+        h += hg + hv / (1 + exp((-1)*(1-difficulty_change)/(epsilon*epsilon)));
     }
-    else if(avg_difficulty <= 1 + epsilon){
-        h += hv / (1 + exp((-1)*(1-avg_difficulty)/(epsilon*epsilon)));
+    else if(difficulty_change <= 1 + epsilon){
+        h += hv / (1 + exp((-1)*(1-difficulty_change)/(epsilon*epsilon)));
     }
     return h;
 }
@@ -131,11 +140,15 @@ int main() {
 
     #ifdef ADAPTIVE
     // queue for avg difficulty/avg target
-    queue < double > q;
-    double running_sum = NUM_OF_LAST_BLOCKS;
-    double running_avg = 1;
+    queue < double > q_cur;
+    queue < double > q_prev;
+    double cur_running_sum = NUM_OF_LAST_BLOCKS;
+    double prev_running_sum = NUM_OF_LAST_BLOCKS;
+    double cur_running_avg = 1;
+    double prev_running_avg = 1;
     for (int i = 0; i < NUM_OF_LAST_BLOCKS; i++){
-        q.push(1.0);
+        q_cur.push(1.0);
+        q_prev.push(1.0);
     }
     #endif
     
@@ -150,7 +163,7 @@ int main() {
     fprintf(fp, "%d,%.0f,%.10lf,%.10lf,%.0f,%.10lf,%.10lf,%0.10lf\n", n, blocks[n].t, blocks[n].t/YEAR, -1.0, non_adaptive_hash_rate_function(t), 1.0/(blocks[n].target)/INITIAL_ABS_DIFFICULTY, blocks[n].faded_total_work, (blocks[n].t-(GENESIS_TIME+n*IDEAL_INTERBLOCK_TIME))/IDEAL_INTERBLOCK_TIME);	       
     #endif
     #ifdef ADAPTIVE
-    fprintf(fp, "%d,%.0f,%.10lf,%.10lf,%.0f,%.10lf,%.10lf,%0.10lf\n", n, blocks[n].t, blocks[n].t/YEAR, -1.0, adaptive_hash_rate_function(running_avg), 1.0/(blocks[n].target)/INITIAL_ABS_DIFFICULTY, blocks[n].faded_total_work, (blocks[n].t-(GENESIS_TIME+n*IDEAL_INTERBLOCK_TIME))/IDEAL_INTERBLOCK_TIME);	       
+    fprintf(fp, "%d,%.0f,%.10lf,%.10lf,%.0f,%.10lf,%.10lf,%0.10lf\n", n, blocks[n].t, blocks[n].t/YEAR, -1.0, adaptive_hash_rate_function(cur_running_avg, prev_running_avg, t), 1.0/(blocks[n].target)/INITIAL_ABS_DIFFICULTY, blocks[n].faded_total_work, (blocks[n].t-(GENESIS_TIME+n*IDEAL_INTERBLOCK_TIME))/IDEAL_INTERBLOCK_TIME);	       
     #endif
         // BLOCK 0                                      // block number
         // t=2009.0000000000(-1.0000000000)             // current time (block time = blocks[n].t-blocks[n-1].t) 
@@ -184,7 +197,7 @@ int main() {
         } while (!(drand48() < candidate.target*non_adaptive_hash_rate_function(t)*NETWORK_RESOLUTION ));      // if the candidate block is valid, break (the mul with non_adaptive_hash_rate_function(t) simulates the effect of volatile network hash rate)
         #endif
         #ifdef ADAPTIVE
-        } while (!(drand48() < candidate.target*adaptive_hash_rate_function(running_avg)*NETWORK_RESOLUTION ));      // if the candidate block is valid, break (the mul with adaptive_hash_rate_function(t) simulates the effect of volatile network hash rate)
+        } while (!(drand48() < candidate.target*adaptive_hash_rate_function(cur_running_avg, prev_running_avg, t)*NETWORK_RESOLUTION ));      // if the candidate block is valid, break (the mul with adaptive_hash_rate_function(t) simulates the effect of volatile network hash rate)
         #endif
 
         n++;
@@ -194,7 +207,7 @@ int main() {
         fprintf(fp, "%d,%.0f,%.10lf,%.10lf,%.0f,%.10lf,%.10lf,%0.10lf\n", n, blocks[n].t, blocks[n].t/YEAR, blocks[n].t-blocks[n-1].t, non_adaptive_hash_rate_function(t), 1.0/(blocks[n].target)/INITIAL_ABS_DIFFICULTY, blocks[n].faded_total_work, (blocks[n].t-(GENESIS_TIME+n*IDEAL_INTERBLOCK_TIME))/FORTNIGHT);	
         #endif
         #ifdef ADAPTIVE
-        fprintf(fp, "%d,%.0f,%.10lf,%.10lf,%.0f,%.10lf,%.10lf,%0.10lf\n", n, blocks[n].t, blocks[n].t/YEAR, blocks[n].t-blocks[n-1].t, adaptive_hash_rate_function(running_avg), 1.0/(blocks[n].target)/INITIAL_ABS_DIFFICULTY, blocks[n].faded_total_work, (blocks[n].t-(GENESIS_TIME+n*IDEAL_INTERBLOCK_TIME))/FORTNIGHT);	
+        fprintf(fp, "%d,%.0f,%.10lf,%.10lf,%.0f,%.10lf,%.10lf,%0.10lf\n", n, blocks[n].t, blocks[n].t/YEAR, blocks[n].t-blocks[n-1].t, adaptive_hash_rate_function(cur_running_avg, prev_running_avg, t), 1.0/(blocks[n].target)/INITIAL_ABS_DIFFICULTY, blocks[n].faded_total_work, (blocks[n].t-(GENESIS_TIME+n*IDEAL_INTERBLOCK_TIME))/FORTNIGHT);	
         #endif
             // BLOCK 796672                                 // block number
             // t=2023.9999586154(905.0000000000)            // current time (block time in NETWORK_RESOLUTION i.e. seconds = blocks[n].t-blocks[n-1].t)
@@ -207,11 +220,16 @@ int main() {
                                                             // here skew is -3.8363971561 because we are 3.8363971561 FORTNIGHTS ahead of the ideal time
 
         #ifdef ADAPTIVE
-        running_sum += 1.0/(blocks[n].target)/INITIAL_ABS_DIFFICULTY;
-        q.push(1.0/(blocks[n].target)/INITIAL_ABS_DIFFICULTY);
-        running_sum = running_sum - q.front();
-        q.pop();
-        running_avg = running_sum / NUM_OF_LAST_BLOCKS;
+        q_cur.push(1.0/(blocks[n].target)/INITIAL_ABS_DIFFICULTY);
+        cur_running_sum = cur_running_sum + q_cur.back() - q_cur.front();
+        cur_running_avg = cur_running_sum / NUM_OF_LAST_BLOCKS;
+
+        q_prev.push(q_cur.front());
+        prev_running_sum = prev_running_sum + q_prev.back() - q_prev.front();
+        prev_running_avg = prev_running_sum / NUM_OF_LAST_BLOCKS;
+
+        q_cur.pop();
+        q_prev.pop();
         #endif
     }
 
