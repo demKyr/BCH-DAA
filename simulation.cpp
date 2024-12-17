@@ -103,7 +103,11 @@ double adaptive_hash_rate_function(double cur_avg_difficulty, double prev_avg_di
     // double BASE_HASH_RATE = (t < 2010.5*YEAR) ? 10000000 : 10000000*30;
     // staircase hash function
     double BASE_HASH_RATE = (t < 2010.5*YEAR) ? 10000000 : (t < 2013.5*YEAR) ? 10000000*10 : 10000000 * 100;
-    
+    // exponentially increasing hash function
+    // double BASE_HASH_RATE = INITIAL_HASH_RATE * exp(log(2) * (t-GENESIS_TIME)/YEAR);
+    // sin and linearly increasing hash function
+    // double BASE_HASH_RATE = INITIAL_HASH_RATE + INITIAL_HASH_RATE/YEAR * (t-GENESIS_TIME) + INITIAL_HASH_RATE * sin(2*M_PI*(t-GENESIS_TIME)/(YEAR));
+
     double hb = BASE_HASH_RATE / 3;
     double hv = 4 * hb;
     double hg = 4 * hb;
